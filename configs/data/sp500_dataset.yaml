@@ -1,0 +1,81 @@
+# SP500 数据集配置，提取自 AlphaMaster。
+# 数据口径沿用 AlphaMaster，只额外增加 13 维 JKP 先验。
+# 美股沿用 AlphaMaster 的 VWAP 适配，使用典型价格代理。
+
+qlib_init:
+    provider_uri: "~/.qlib/qlib_data/us_data"
+    region: us
+    kernels: 2
+market: &market sp500
+benchmark: &benchmark "^gspc"
+
+data_handler_config:
+    start_time: 2008-01-01
+    end_time: 2025-12-31
+    fit_start_time: 2009-01-01
+    fit_end_time: 2020-12-31
+    instruments: *market
+    infer_processors:
+        - class: RobustZScoreNorm
+          kwargs:
+              fields_group: feature
+              clip_outlier: true
+        - class: Fillna
+          kwargs:
+              fields_group: feature
+        - class: RobustZScoreNorm
+          kwargs:
+              fields_group: prior
+              clip_outlier: true
+        - class: Fillna
+          kwargs:
+              fields_group: prior
+    learn_processors:
+        - class: DropnaLabel
+        - class: CSRankNorm
+          kwargs:
+              fields_group: label
+    # 与 AlphaMaster 相同：只保留第 5 日目标，Qlib 默认字段名为 LABEL0。
+    label: ["Ref($close, -5) / Ref($close, -1) - 1"]
+
+
+jkp_config:
+    path: "datasets/jkpdata/[usa]_[all_themes]_[daily]_[vw_cap].csv"
+    location: usa
+    weighting: vw_cap
+    freq: daily
+    window: 20
+
+market_data_handler_config:
+    windows: [5, 10, 20, 30, 60]
+    start_time: 2008-01-01
+    end_time: 2025-12-31
+    fit_start_time: 2009-01-01
+    fit_end_time: 2020-12-31
+    instruments: *market
+    market_indices: ["^gspc", "^dji", "^ndx"]   # 标普500 / 道琼斯 / 纳斯达克100
+    infer_processors:
+        - class: RobustZScoreNorm
+          kwargs:
+              fields_group: market
+              clip_outlier: true
+        - class: Fillna
+          kwargs:
+              fields_group: market
+
+dataset:
+    segments:
+        train: [2009-01-01, 2020-12-31]
+        valid: [2021-01-01, 2022-12-31]
+        test: [2023-01-01, 2025-12-31]
+    # 与 AlphaMaster 一致，使用 8 日窗口。
+    step_len: 8
+    fillna_type: ffill+bfill
+    dtype: float32
+    split_data_keys:
+        train: learn
+        valid: learn
+        test: infer
+
+# 相对路径以 ohmykbs 为基准。
+output_dir: datasets/processed/sp500
