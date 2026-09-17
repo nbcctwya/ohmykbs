@@ -1,0 +1,7 @@
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 原始 JKP 数据和预生成数据集
+/datasets/jkpdata/
+/datasets/processed/

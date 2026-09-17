@@ -20,7 +20,7 @@ conda run -n kbs python -m datasets.build --config configs/data/sp500_dataset.ya
 conda run -n kbs python -m unittest discover -s tests -v
 ```
 
-正式构建时去掉 `--validate-only`。当前阶段没有执行真实构建。输出目录由 `output_dir` 指定，相对路径以 `ohmykbs` 为基准：
+正式构建时去掉 `--validate-only`。2026-09-17 已完成两份真实数据集构建及与 AlphaMaster 的全量窗口核对。输出目录由 `output_dir` 指定，相对路径以 `ohmykbs` 为基准：
 
 ```text
 datasets/processed/csi300/
@@ -43,11 +43,11 @@ pickle 保存逐日数组、样本索引、字段和固定窗口规则，加载�
 
 JKP CSV 位于 `datasets/jkpdata/`，当前两份输入复制自 HVQ-Stock。`jkp_config` 指定路径、国家、权重、频率及滚动窗口。因子先对齐 Qlib 交易日历并滞后一日，再计算 `expm1(rolling_20_sum(log1p(ret)))`，按因子名称排序并广播给同日股票；先验独立执行 RobustZScoreNorm 和 Fillna。
 
-目标表达式与 AlphaMaster 完全相同：`Ref($close, -5) / Ref($close, -1) - 1`，默认列名为 `LABEL0`，即 `close(t+5)/close(t+1)-1`。训练/验证再执行 CSRankNorm；测试保留原始收益。JKP 的 20 日滚动计算与输入的 8 日窗口相互独立。
+目标表达式与 AlphaMaster 完全相同：`Ref($close, -5) / Ref($close, -1) - 1`，列名为该表达式本身，即 `close(t+5)/close(t+1)-1`。训练/验证再执行 CSRankNorm；测试保留原始收益。JKP 的 20 日滚动计算与输入的 8 日窗口相互独立。
 
 训练/验证使用 `learn` 数据，测试使用 `infer` 数据并保留缺失标签。已有输出目录拒绝覆盖，失败构建可能留下部分文件。加载时需要本项目的 `datasets` 包。Qlib sampler 构造时会消费传入的 DataFrame，以减少内存占用。
 
-当前保留原日期划分，没有追加跨边界标签过滤。测试仅使用模拟数据和 `init_data=False` 的 handler，真实数据构建及全量质量核验留待后续。
+当前保留原日期划分，没有追加跨边界标签过滤。单元测试只使用模拟数据和 `init_data=False` 的 handler。
 
 ## 按日加载
 

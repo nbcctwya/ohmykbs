@@ -35,7 +35,7 @@ data_handler_config:
         - class: CSRankNorm
           kwargs:
               fields_group: label
-    # 与 AlphaMaster 相同：只保留第 5 日目标，Qlib 默认字段名为 LABEL0。
+    # 与 AlphaMaster 相同：只保留第 5 日目标，Qlib 使用表达式本身作为字段名。
     label: ["Ref($close, -5) / Ref($close, -1) - 1"]
 
 
